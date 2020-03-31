@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Configuration and fixtures for unit test suite."""
 import pytest
 
 pytest_plugins = ['aiida.manage.tests.pytest_fixtures']  # pylint: disable=invalid-name

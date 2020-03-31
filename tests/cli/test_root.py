@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Test the root command of the CLI."""
 from aiida_sssp.cli import cmd_root
 
 
