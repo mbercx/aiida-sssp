@@ -14,6 +14,11 @@
         "Programming Language :: Python :: 3.8"
     ],
     "description": "AiiDA plugin for the Standard Solid State Pseudopotential (SSSP) library",
+    "entry_points": {
+        "console_scripts": [
+            "aiida-sssp = aiida_sssp.cli:cmd_root"
+        ]
+    },
     "install_requires": [
         "aiida-core>=1.0.0,<2.0.0",
         "click~=7.1",
