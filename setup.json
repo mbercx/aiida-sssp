@@ -1,0 +1,26 @@
+{
+    "author": "The AiiDA team",
+    "author_email": "developers@aiida.net",
+    "classifiers": [
+        "Development Status :: 4 - Beta",
+        "Framework :: AiiDA",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: POSIX :: Linux",
+        "Operating System :: MacOS :: MacOS X",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8"
+    ],
+    "description": "AiiDA plugin for the Standard Solid State Pseudopotential (SSSP) library",
+    "install_requires": [
+        "aiida-core>=1.0.0,<2.0.0",
+        "click~=7.1",
+        "click-completion~=0.5"
+    ],
+    "license": "MIT License",
+    "name": "aiida-sssp",
+    "url": "https://github.com/aiidateam/aiida-sssp",
+    "version": "0.1.0"
+}
