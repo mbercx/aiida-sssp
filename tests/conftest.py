@@ -39,6 +39,8 @@ def run_cli_command():
             assert result.exception is None, ''.join(traceback.format_exception(*result.exc_info))
             assert result.exit_code == 0, result.output
 
+        result.output_lines = [line.strip() for line in result.output.split('\n') if line.strip()]
+
         return result
 
     return _run_cli_command
