@@ -28,6 +28,17 @@ def test_construct(clear_database):
     assert family.description == description
 
 
+def test_load(clear_database):
+    """Test that loading of a `SsspFamily` through `load_group` works."""
+    family = SsspFamily(label='SSSP').store()
+    assert isinstance(family, SsspFamily)
+
+    loaded = orm.load_group(family.pk)
+    assert isinstance(family, SsspFamily)
+    assert loaded.uuid == family.uuid
+    assert loaded.elements == family.elements
+
+
 def test_add_nodes(clear_database, get_upf_data):
     """Test the `SsspFamily.add_nodes` method."""
     upf_he = get_upf_data(element='He').store()

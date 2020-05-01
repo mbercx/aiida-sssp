@@ -19,11 +19,7 @@ class SsspFamily(Group):
     """
 
     _node_types = (UpfData,)
-
-    def __init__(self, *args, **kwargs):
-        """Initialize the instance with an empty pseudo potential cache."""
-        super().__init__(*args, **kwargs)
-        self._pseudos = {}
+    _pseudos = None
 
     def __repr__(self):
         """Represent the instance for debugging purposes."""
@@ -109,9 +105,20 @@ class SsspFamily(Group):
                 raise ValueError('element `{}` already present in this family'.format(upf.element))
             pseudos[upf.element] = upf
 
-        self._pseudos.update(pseudos)
+        self.pseudos.update(pseudos)
 
         super().add_nodes(nodes)
+
+    @property
+    def pseudos(self):
+        """Return the dictionary of pseudo potentials of this family indexed on the element symbol.
+
+        :return: dictionary of element symbol mapping `UpfData`
+        """
+        if self._pseudos is None:
+            self._pseudos = {upf.element: upf for upf in self.nodes}
+
+        return self._pseudos
 
     @property
     def elements(self):
@@ -119,10 +126,7 @@ class SsspFamily(Group):
 
         :return: list of element symbols
         """
-        if self._pseudos is None:
-            self._pseudos = {upf.element: upf for upf in self.nodes}
-
-        return list(self._pseudos.keys())
+        return list(self.pseudos.keys())
 
     def get_pseudo(self, element):
         """Return the `UpfData` for the given element.
@@ -132,7 +136,7 @@ class SsspFamily(Group):
         :raises ValueError: if the family does not contain a `UpfData` for the given element
         """
         try:
-            pseudo = self._pseudos[element]
+            pseudo = self.pseudos[element]
         except KeyError:
             builder = QueryBuilder().append(
                 SsspFamily, filters={'id': self.pk}, tag='group').append(
@@ -145,6 +149,6 @@ class SsspFamily(Group):
             except exceptions.NotExistent:
                 raise ValueError('family `{}` does not contain pseudo for element `{}`'.format(self.label, element))
             else:
-                self._pseudos[element] = pseudo
+                self.pseudos[element] = pseudo
 
         return pseudo
