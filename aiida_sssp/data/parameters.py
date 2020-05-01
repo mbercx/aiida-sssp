@@ -11,6 +11,25 @@ class SsspParameters(orm.Data):
 
     KEY_FAMILY_LABEL = 'family_label'
 
+    @classmethod
+    def create_from_file(cls, source, label):
+        """Construct a new instance of metatdata parameters for an `SsspFamily` from a file.
+
+        :param source: a filelike handle or absolute filepath.
+        :return: instance of `SsspParameters`.
+        """
+        import json
+
+        try:
+            content = source.read()
+        except AttributeError:
+            with open(source) as handle:
+                parameters = json.load(handle)
+        else:
+            parameters = json.loads(content)
+
+        return cls(parameters, label)
+
     def __init__(self, parameters, label, **kwargs):
         """Construct a new instance of metadata parameters for an `SsspFamily`.
 

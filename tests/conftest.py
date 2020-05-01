@@ -71,6 +71,31 @@ def get_upf_data(filepath_pseudos):
 
 
 @pytest.fixture
+def sssp_parameter_metadata():
+    """Return default metadata parameters for construction of `SsspParameter`."""
+    return {
+        'Ar': {
+            'cutoff_wfc': 10.,
+            'cutoff_rho': 20.,
+            'filename': 'Ar.upf',
+            'md5': '62a1754735fbb79bac662092d68a8bb9'
+        },
+        'He': {
+            'cutoff_wfc': 20.,
+            'cutoff_rho': 80.,
+            'filename': 'He.upf',
+            'md5': '5e00510a01c97f7faa8d22f18dd6c41f'
+        },
+        'Ne': {
+            'cutoff_wfc': 30.,
+            'cutoff_rho': 240.,
+            'filename': 'Ne.upf',
+            'md5': 'd8afbe89a47929da4eb817a75c908077'
+        }
+    }
+
+
+@pytest.fixture
 def create_sssp_family(filepath_pseudos):
     """Create an `SsspFamily` from the `tests/fixtures/pseudos` directory."""
 
@@ -82,33 +107,14 @@ def create_sssp_family(filepath_pseudos):
 
 
 @pytest.fixture
-def create_sssp_parameters():
+def create_sssp_parameters(sssp_parameter_metadata):
     """Create an `SsspParameters` from the `tests/fixtures/pseudos` directory."""
 
     def factory(parameters=None, label='SSSP'):
         from aiida_sssp.data import SsspParameters
 
         if parameters is None:
-            parameters = {
-                'Ar': {
-                    'cutoff_wfc': 10.,
-                    'cutoff_rho': 20.,
-                    'filename': 'Ar.upf',
-                    'md5': '62a1754735fbb79bac662092d68a8bb9'
-                },
-                'He': {
-                    'cutoff_wfc': 20.,
-                    'cutoff_rho': 80.,
-                    'filename': 'He.upf',
-                    'md5': '5e00510a01c97f7faa8d22f18dd6c41f'
-                },
-                'Ne': {
-                    'cutoff_wfc': 30.,
-                    'cutoff_rho': 240.,
-                    'filename': 'Ne.upf',
-                    'md5': 'd8afbe89a47929da4eb817a75c908077'
-                }
-            }
+            parameters = sssp_parameter_metadata
 
         return SsspParameters(parameters, label)
 

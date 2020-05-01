@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=unused-argument
 """Tests for the `SsspParameters` data class."""
+import json
+import tempfile
+
 import pytest
 
 from aiida.common import exceptions
@@ -88,6 +91,24 @@ def test_construction(clear_db, create_sssp_parameters):
 
     node.store()
     assert node.pk is not None
+
+
+def test_create_from_file(clear_db, sssp_parameter_metadata):
+    """Test the `SsspParameters.create_from_file` class method."""
+    label = 'SSSP'
+
+    with tempfile.NamedTemporaryFile(mode='w') as handle:
+        json.dump(sssp_parameter_metadata, handle)
+        handle.flush()
+
+        parameters = SsspParameters.create_from_file(handle.name, label)
+        assert parameters.get_metadata() == sssp_parameter_metadata
+        assert parameters.family_label == label
+
+        with open(handle.name) as source:
+            parameters = SsspParameters.create_from_file(source, label)
+            assert parameters.get_metadata() == sssp_parameter_metadata
+            assert parameters.family_label == label
 
 
 def test_family_label(clear_db, create_sssp_parameters):
