@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Subclass of `Data` to represent parameters for a specific `SsspFamily`."""
+"""Subclass of `Data` to represent metadata parameters for a specific `SsspFamily`."""
 from aiida import orm
 from aiida.common.lang import type_check
 
@@ -7,24 +7,28 @@ __all__ = ('SsspParameters',)
 
 
 class SsspParameters(orm.Data):
-    """Subclass of `Data` to represent parameters for a specific `SsspFamily`."""
+    """Subclass of `Data` to represent metadata parameters for a specific `SsspFamily`."""
 
     KEY_FAMILY_LABEL = 'family_label'
 
-    def __init__(self, family, parameters, **kwargs):
-        """Construct a new instance of cutoff parameters for an `SsspFamily`.
+    def __init__(self, parameters, label, **kwargs):
+        """Construct a new instance of metadata parameters for an `SsspFamily`.
 
-        The family has to an instance of `SsspFamily`. The `parameters` should be a dictionary of elements, where each
-        element provides a dictionary of `cutoff_wfc`, `cutoff_rho`, `filename` and `md5`.
+        .. note:: the direction of control flows from the `SsspFamily` to the `SsspParameters`. That is to say, the
+            parameters only "knows" about the `SsspFamily` through the `family_label` that should correspond to the
+            label of the `SsspFamily`. However, the responsibility of validating the correspondence of the parameters
+            metadata and the actual pseudos contained in the `SsspFamily` is up to the family. The `SsspParameters` will
+            only guarantee that for each element that it specifies, the format of the metadata is complete and of the
+            correct type. It will not validate the actual values.
 
-        :param parameters: the dictionary with parameters of a given `SsspFamily`
-        :param family: an instance of `SsspFamily` to which the parameters should apply.
+        :param parameters: metadata parameters of a given `SsspFamily`. Should be a dictionary of elements, where each
+            element provides a dictionary of `cutoff_wfc`, `cutoff_rho`, `filename` and `md5`.
+        :param label: the label of the family to which this parameters should be coupled.
         """
-        from aiida_sssp.groups import SsspFamily
         super().__init__(**kwargs)
 
         type_check(parameters, dict)
-        type_check(family, SsspFamily, msg='`family` is not an instance of `SsspFamily`')
+        type_check(label, str)
 
         for element, values in parameters.items():
             for key, valid_types in [('filename', str), ('md5', str), ('cutoff_wfc', float), ('cutoff_rho', float)]:
@@ -36,7 +40,7 @@ class SsspParameters(orm.Data):
                     raise ValueError('`{}` for element `{}` is not of type {}'.format(key, element, valid_types))
 
         self.set_attribute_many(parameters)
-        self.set_attribute(self.KEY_FAMILY_LABEL, family.label)
+        self.family_label = label
 
     def __repr__(self):
         """Represent the instance for debugging purposes."""
@@ -71,11 +75,17 @@ class SsspParameters(orm.Data):
         """
         return set(self.attributes_keys()) - {self.KEY_FAMILY_LABEL}
 
-    def get_metadata(self, element):
-        """Return the metadata for the given element.
+    def get_metadata(self, element=None):
+        """Return the metadata for all or a specific element.
 
+        :param element: optional element
         :raises KeyError: if the element is not defined for this instance
         """
+        if element is None:
+            metadata = dict(self.attributes)
+            metadata.pop(self.KEY_FAMILY_LABEL)
+            return metadata
+
         try:
             return self.get_attribute(element)
         except AttributeError:

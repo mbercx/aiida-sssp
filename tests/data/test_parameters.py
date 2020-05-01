@@ -3,7 +3,6 @@
 """Tests for the `SsspParameters` data class."""
 import pytest
 
-from aiida.orm import Group
 from aiida.common import exceptions
 from aiida_sssp.data import SsspParameters
 
@@ -29,56 +28,55 @@ SSSP_PARAMETERS = {
 }
 
 
-def test_construction_fail(clear_db, create_sssp_family):
+def test_construction_fail(clear_db):
     """Test the various construction arguments that should raise."""
-    family = create_sssp_family()
+    with pytest.raises(TypeError) as exception:
+        SsspParameters([], 'SSSP')
+    assert 'Got object of type' in str(exception.value)
 
     with pytest.raises(TypeError) as exception:
-        SsspParameters(Group(label='sssp'), {})
-    assert '`family` is not an instance of `SsspFamily`' in str(exception.value)
-
-    with pytest.raises(TypeError) as exception:
-        SsspParameters(family, [])
+        parameters = {'Ar': {'cutoff_rho': 2., 'filename': 'Ar.upf', 'md5': '91d02ab07c1'}}
+        SsspParameters(parameters, {'label'})
     assert 'Got object of type' in str(exception.value)
 
     with pytest.raises(ValueError) as exception:
         parameters = {'Ar': {'cutoff_rho': 2., 'filename': 'Ar.upf', 'md5': '91d02ab07c1'}}
-        SsspParameters(family, parameters)
+        SsspParameters(parameters, label='SSSP')
     assert 'entry for element `Ar` is missing the `cutoff_wfc` key' in str(exception.value)
 
     with pytest.raises(ValueError) as exception:
         parameters = {'Ar': {'cutoff_wfc': 1., 'filename': 'Ar.upf', 'md5': '91d02ab07c1'}}
-        SsspParameters(family, parameters)
+        SsspParameters(parameters, label='SSSP')
     assert 'entry for element `Ar` is missing the `cutoff_rho` key' in str(exception.value)
 
     with pytest.raises(ValueError) as exception:
         parameters = {'Ar': {'cutoff_wfc': 1., 'cutoff_rho': 2., 'md5': '91d02ab07c1'}}
-        SsspParameters(family, parameters)
+        SsspParameters(parameters, label='SSSP')
     assert 'entry for element `Ar` is missing the `filename` key' in str(exception.value)
 
     with pytest.raises(ValueError) as exception:
         parameters = {'Ar': {'cutoff_wfc': 1., 'cutoff_rho': 2., 'filename': 'Ar.upf'}}
-        SsspParameters(family, parameters)
+        SsspParameters(parameters, label='SSSP')
     assert 'entry for element `Ar` is missing the `md5` key' in str(exception.value)
 
     with pytest.raises(ValueError) as exception:
         parameters = {'Ar': {'cutoff_wfc': 'str', 'cutoff_rho': 2., 'filename': 'Ar.upf', 'md5': '91d02ab07c1'}}
-        SsspParameters(family, parameters)
+        SsspParameters(parameters, label='SSSP')
     assert '`cutoff_wfc` for element `Ar` is not of type' in str(exception.value)
 
     with pytest.raises(ValueError) as exception:
         parameters = {'Ar': {'cutoff_wfc': 1., 'cutoff_rho': 'str', 'filename': 'Ar.upf', 'md5': '91d02ab07c1'}}
-        SsspParameters(family, parameters)
+        SsspParameters(parameters, label='SSSP')
     assert '`cutoff_rho` for element `Ar` is not of type' in str(exception.value)
 
     with pytest.raises(ValueError) as exception:
         parameters = {'Ar': {'cutoff_wfc': 1., 'cutoff_rho': 2., 'filename': 1., 'md5': '91d02ab07c1'}}
-        SsspParameters(family, parameters)
+        SsspParameters(parameters, label='SSSP')
     assert '`filename` for element `Ar` is not of type' in str(exception.value)
 
     with pytest.raises(ValueError) as exception:
         parameters = {'Ar': {'cutoff_wfc': 1., 'cutoff_rho': 2., 'filename': 'Ar.upf', 'md5': 1}}
-        SsspParameters(family, parameters)
+        SsspParameters(parameters, label='SSSP')
     assert '`md5` for element `Ar` is not of type' in str(exception.value)
 
 
@@ -92,21 +90,20 @@ def test_construction(clear_db, create_sssp_parameters):
     assert node.pk is not None
 
 
-def test_family_label(clear_db, create_sssp_family, create_sssp_parameters):
+def test_family_label(clear_db, create_sssp_parameters):
     """Test the `SsspParameters.family_label` property."""
-    family = create_sssp_family()
-    node = create_sssp_parameters(family)
+    label = 'SSSP'
+    node = create_sssp_parameters(label=label)
 
-    assert node.family_label == family.label
+    assert node.family_label == label
 
-    alternate_label = 'alternate'
-    node.family_label = alternate_label
-    assert node.family_label == alternate_label
+    node.family_label = 'alternate'
+    assert node.family_label == 'alternate'
 
     node.store()
 
     with pytest.raises(exceptions.ModificationNotAllowed):
-        node.family_label = family.label
+        node.family_label = 'SSSP'
 
 
 def test_elements(clear_db, create_sssp_parameters):
@@ -118,6 +115,8 @@ def test_elements(clear_db, create_sssp_parameters):
 def test_get_metadata(clear_db, create_sssp_parameters):
     """Test the `SsspParameters.get_metadata` method."""
     node = create_sssp_parameters(parameters=SSSP_PARAMETERS)
+
+    assert node.get_metadata() == SSSP_PARAMETERS
 
     with pytest.raises(KeyError):
         node.get_metadata('Br')

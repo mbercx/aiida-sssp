@@ -82,14 +82,11 @@ def create_sssp_family(filepath_pseudos):
 
 
 @pytest.fixture
-def create_sssp_parameters(create_sssp_family):
+def create_sssp_parameters():
     """Create an `SsspParameters` from the `tests/fixtures/pseudos` directory."""
 
-    def factory(family=None, parameters=None):
+    def factory(parameters=None, label='SSSP'):
         from aiida_sssp.data import SsspParameters
-
-        if family is None:
-            family = create_sssp_family()
 
         if parameters is None:
             parameters = {
@@ -97,22 +94,22 @@ def create_sssp_parameters(create_sssp_family):
                     'cutoff_wfc': 10.,
                     'cutoff_rho': 20.,
                     'filename': 'Ar.upf',
-                    'md5': '91d02ab07c14fb60c3c6496920ee6523'
+                    'md5': '62a1754735fbb79bac662092d68a8bb9'
                 },
                 'He': {
                     'cutoff_wfc': 20.,
                     'cutoff_rho': 80.,
                     'filename': 'He.upf',
-                    'md5': '202f5b754e21ed83f3bbcc5255632b0e'
+                    'md5': '5e00510a01c97f7faa8d22f18dd6c41f'
                 },
                 'Ne': {
                     'cutoff_wfc': 30.,
                     'cutoff_rho': 240.,
                     'filename': 'Ne.upf',
-                    'md5': '778fbbd85300b29561a271270126513b'
+                    'md5': 'd8afbe89a47929da4eb817a75c908077'
                 }
             }
 
-        return SsspParameters(family, parameters)
+        return SsspParameters(parameters, label)
 
     return factory
