@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Subclass of `Data` to represent metadata parameters for a specific `SsspFamily`."""
+from uuid import UUID
+
 from aiida import orm
 from aiida.common.lang import type_check
 
@@ -9,13 +11,14 @@ __all__ = ('SsspParameters',)
 class SsspParameters(orm.Data):
     """Subclass of `Data` to represent metadata parameters for a specific `SsspFamily`."""
 
-    KEY_FAMILY_LABEL = 'family_label'
+    KEY_FAMILY_UUID = 'family_uuid'
 
     @classmethod
-    def create_from_file(cls, source, label):
+    def create_from_file(cls, source, uuid):
         """Construct a new instance of metatdata parameters for an `SsspFamily` from a file.
 
         :param source: a filelike handle or absolute filepath.
+        :param uuid: the UUID of the `SsspFamily` to which it should be coupled.
         :return: instance of `SsspParameters`.
         """
         import json
@@ -28,26 +31,26 @@ class SsspParameters(orm.Data):
         else:
             parameters = json.loads(content)
 
-        return cls(parameters, label)
+        return cls(parameters, uuid)
 
-    def __init__(self, parameters, label, **kwargs):
+    def __init__(self, parameters, uuid, **kwargs):
         """Construct a new instance of metadata parameters for an `SsspFamily`.
 
         .. note:: the direction of control flows from the `SsspFamily` to the `SsspParameters`. That is to say, the
-            parameters only "knows" about the `SsspFamily` through the `family_label` that should correspond to the
-            label of the `SsspFamily`. However, the responsibility of validating the correspondence of the parameters
+            parameters only "knows" about the `SsspFamily` through the `family_uuid` that should correspond to the
+            UUID of the `SsspFamily`. However, the responsibility of validating the correspondence of the parameters
             metadata and the actual pseudos contained in the `SsspFamily` is up to the family. The `SsspParameters` will
             only guarantee that for each element that it specifies, the format of the metadata is complete and of the
             correct type. It will not validate the actual values.
 
         :param parameters: metadata parameters of a given `SsspFamily`. Should be a dictionary of elements, where each
             element provides a dictionary of `cutoff_wfc`, `cutoff_rho`, `filename` and `md5`.
-        :param label: the label of the family to which this parameters should be coupled.
+        :param uuid: the UUID of the family to which this parameters should be coupled.
         """
         super().__init__(**kwargs)
 
         type_check(parameters, dict)
-        type_check(label, str)
+        type_check(uuid, (str, UUID))
 
         for element, values in parameters.items():
             for key, valid_types in [('filename', str), ('md5', str), ('cutoff_wfc', float), ('cutoff_rho', float)]:
@@ -59,7 +62,7 @@ class SsspParameters(orm.Data):
                     raise ValueError('`{}` for element `{}` is not of type {}'.format(key, element, valid_types))
 
         self.set_attribute_many(parameters)
-        self.family_label = label
+        self.family_uuid = uuid
 
     def __repr__(self):
         """Represent the instance for debugging purposes."""
@@ -70,21 +73,22 @@ class SsspParameters(orm.Data):
         return self.__repr__()
 
     @property
-    def family_label(self):
-        """Return the label of the `SsspFamily` to which this parameters instance is associated.
+    def family_uuid(self):
+        """Return the UUID of the `SsspFamily` to which this parameters instance is associated.
 
-        :return: the label of the associated `SsspFamily`
+        :return: the string UUID of the associated `SsspFamily`
         """
-        return self.get_attribute(self.KEY_FAMILY_LABEL)
+        return self.get_attribute(self.KEY_FAMILY_UUID)
 
-    @family_label.setter
-    def family_label(self, value):
-        """Set the label of the `SsspFamily` to which this parameters instance is associated.
+    @family_uuid.setter
+    def family_uuid(self, value):
+        """Set the UUID of the `SsspFamily` to which this parameters instance is associated.
 
-        :param value: the label of the associated `SsspFamily`
+        :param value: the UUID of the associated `SsspFamily`.
         :raises: `~aiida.common.exceptions.ModificationNotAllowed`
         """
-        return self.set_attribute(self.KEY_FAMILY_LABEL, value)
+        type_check(value, (str, UUID))
+        return self.set_attribute(self.KEY_FAMILY_UUID, str(value))
 
     @property
     def elements(self):
@@ -92,7 +96,7 @@ class SsspParameters(orm.Data):
 
         :return: set of elements
         """
-        return set(self.attributes_keys()) - {self.KEY_FAMILY_LABEL}
+        return set(self.attributes_keys()) - {self.KEY_FAMILY_UUID}
 
     def get_metadata(self, element=None):
         """Return the metadata for all or a specific element.
@@ -102,7 +106,7 @@ class SsspParameters(orm.Data):
         """
         if element is None:
             metadata = dict(self.attributes)
-            metadata.pop(self.KEY_FAMILY_LABEL)
+            metadata.pop(self.KEY_FAMILY_UUID)
             return metadata
 
         try:

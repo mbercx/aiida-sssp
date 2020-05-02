@@ -47,6 +47,13 @@ def run_cli_command():
 
 
 @pytest.fixture
+def uuid():
+    """Return a UUID4."""
+    import uuid
+    return uuid.uuid4()
+
+
+@pytest.fixture
 def filepath_fixtures():
     """Return the absolute filepath to the directory containing the file `fixtures`."""
     return os.path.join(os.path.dirname(__file__), 'fixtures')
@@ -107,15 +114,15 @@ def create_sssp_family(filepath_pseudos):
 
 
 @pytest.fixture
-def create_sssp_parameters(sssp_parameter_metadata):
+def create_sssp_parameters(sssp_parameter_metadata, uuid):
     """Create an `SsspParameters` from the `tests/fixtures/pseudos` directory."""
 
-    def factory(parameters=None, label='SSSP'):
+    def factory(parameters=None, uuid=uuid):
         from aiida_sssp.data import SsspParameters
 
         if parameters is None:
             parameters = sssp_parameter_metadata
 
-        return SsspParameters(parameters, label)
+        return SsspParameters(parameters, uuid)
 
     return factory
