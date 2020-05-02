@@ -30,13 +30,14 @@ def attempt(message, exception_types=Exception, include_traceback=False):
         echo.echo_highlight(' [OK]', color='success', bold=True)
 
 
-def create_family_from_archive(filepath, label, fmt=None):
+def create_family_from_archive(label, filepath_archive, filepath_metadata=None, fmt=None):
     """Construct a new `SsspFamily` instance from a tar.gz archive.
 
     .. warning:: the archive should not contain any subdirectories, but just the pseudos in UPF format.
 
-    :param filepath: absolute filepath to the .tar.gz archive containing the pseudo potentials.
     :param label: the label for the new family
+    :param filepath: absolute filepath to the .tar.gz archive containing the pseudo potentials.
+    :param filepath: optional absolute filepath to the .json file containing the pseudo potentials metadata.
     :param fmt: the format of the archive, if not specified will attempt to guess based on extension of `filepath`
     :return: newly created `SsspFamily`
     :raises OSError: if the archive could not be unpacked or pseudos in it could not be parsed into a `SsspFamily`
@@ -49,12 +50,12 @@ def create_family_from_archive(filepath, label, fmt=None):
     with tempfile.TemporaryDirectory() as dirpath:
 
         try:
-            shutil.unpack_archive(filepath, dirpath, format=fmt)
+            shutil.unpack_archive(filepath_archive, dirpath, format=fmt)
         except shutil.ReadError as exception:
-            raise OSError('failed to unpack the archive `{}`: {}'.format(filepath, exception))
+            raise OSError('failed to unpack the archive `{}`: {}'.format(filepath_archive, exception))
 
         try:
-            family = SsspFamily.create_from_folder(dirpath, label)
+            family = SsspFamily.create_from_folder(dirpath, label, filepath_parameters=filepath_metadata)
         except ValueError as exception:
             raise OSError('failed to parse pseudos from `{}`: {}'.format(dirpath, exception))
 

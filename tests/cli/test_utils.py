@@ -57,8 +57,9 @@ def get_pseudo_archive(filepath_pseudos, request):
     ),
     indirect=True
 )
-def test_create_family_from_archive(clear_db, get_pseudo_archive):
+def test_create_family_from_archive(clear_db, get_pseudo_archive, sssp_parameter_filepath):
     """Test the `create_family_from_archive` utility function."""
+    from aiida_sssp.data import SsspParameters
     from aiida_sssp.groups import SsspFamily
 
     filepath_archive, exception, message = get_pseudo_archive
@@ -67,13 +68,21 @@ def test_create_family_from_archive(clear_db, get_pseudo_archive):
 
     if exception is not None:
         with pytest.raises(exception) as exception:
-            create_family_from_archive(filepath_archive, label)
+            create_family_from_archive(label, filepath_archive)
         assert message in str(exception.value)
-    else:
-        family = create_family_from_archive(filepath_archive, label)
-        assert isinstance(family, SsspFamily)
-        assert family.label == label
-        assert family.count() != 0
+        return
+
+    family = create_family_from_archive(label, filepath_archive)
+    assert isinstance(family, SsspFamily)
+    assert family.label == label
+    assert family.count() != 0
+
+    label = 'SSSP/1.0/LDA/extreme'
+    family = create_family_from_archive(label, filepath_archive, sssp_parameter_filepath)
+    assert isinstance(family, SsspFamily)
+    assert family.label == label
+    assert family.count() != 0
+    assert isinstance(family.get_parameters_node(), SsspParameters)
 
 
 def test_attempt_sucess(capsys):

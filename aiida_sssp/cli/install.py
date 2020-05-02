@@ -53,8 +53,10 @@ def cmd_install(version, functional, protocol, traceback):
     with tempfile.TemporaryDirectory() as dirpath:
 
         url_archive = url_base + '.tar.gz'
+        url_metadata = url_base + '.json'
 
         filepath_archive = os.path.join(dirpath, 'archive.tar.gz')
+        filepath_metadata = os.path.join(dirpath, 'metadata.json')
 
         with attempt('downloading selected pseudo potentials archive... ', include_traceback=traceback):
             response = requests.get(url_archive)
@@ -62,8 +64,14 @@ def cmd_install(version, functional, protocol, traceback):
             with open(filepath_archive, 'wb') as handle:
                 handle.write(response.content)
 
+        with attempt('downloading selected pseudo potentials metadata... ', include_traceback=traceback):
+            response = requests.get(url_metadata)
+            response.raise_for_status()
+            with open(filepath_metadata, 'wb') as handle:
+                handle.write(response.content)
+
         with attempt('unpacking archive and parsing pseudos... ', include_traceback=traceback):
-            family = create_family_from_archive(filepath_archive, label)
+            family = create_family_from_archive(label, filepath_archive, filepath_metadata)
 
         family.description = description
         echo.echo_success('installed `{}` containing {} pseudo potentials'.format(label, family.count()))

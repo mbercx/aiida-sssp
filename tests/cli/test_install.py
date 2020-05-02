@@ -7,11 +7,17 @@ from aiida_sssp.cli import cmd_install
 
 def test_install(clear_db, run_cli_command):
     """Test the `aiida-sssp install` command."""
+    from aiida_sssp.data import SsspParameters
     from aiida_sssp.groups import SsspFamily
 
     result = run_cli_command(cmd_install)
     assert 'installed `SSSP/' in result.output
     assert orm.QueryBuilder().append(SsspFamily).count() == 1
+
+    family = orm.QueryBuilder().append(SsspFamily).one()[0]
+    parameters = family.get_parameters_node()
+    assert isinstance(parameters, SsspParameters)
+    assert parameters.family_uuid == family.uuid
 
     result = run_cli_command(cmd_install, raises=SystemExit)
     assert 'is already installed' in result.output
