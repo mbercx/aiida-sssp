@@ -10,6 +10,7 @@ from aiida.plugins import DataFactory
 __all__ = ('SsspFamily',)
 
 UpfData = DataFactory('upf')
+SsspParameters = DataFactory('sssp.parameters')
 
 
 class SsspFamily(Group):
@@ -30,29 +31,46 @@ class SsspFamily(Group):
         return '{}<{}>'.format(self.__class__.__name__, self.label)
 
     @classmethod
-    def create_from_folder(cls, dirpath, label, description=None):
-        """Create a new `SsspFamily` from the pseudo potentials contained in a directory.
+    def validate_parameters(cls, pseudos, parameters):
+        """Validate the compatibility of a list of pseudos and the given metadata parameters.
 
-        .. note:: the directory pointed to by `dirpath` should only contain UPF files. If it contains any folders or any
-            of the files cannot be parsed as valid UPF, the method will raise a `ValueError`.
+        :param pseudos: list of `UpfData` nodes
+        :param parameters: an instance of `SsspParameters`
+        :raises ValueError: if the `SsspParameters` are not compatible with the list of pseudos
+        """
+        type_check(pseudos, list)
+        type_check(parameters, SsspParameters)
 
-        :param dirpath: absolute path to the folder containing the UPF files.
-        :param label: the label to give to the `SsspFamily`, should not already exist
-        :param description: optional description to give to the family.
-        :return: new instance of `SsspFamily`
-        :raises ValueError: if a `SsspFamily` already exists with the given name
+        metadata = parameters.get_metadata()
+
+        for pseudo in pseudos:
+
+            type_check(pseudo, UpfData)
+            element = pseudo.element
+
+            try:
+                values = metadata[element]
+            except KeyError:
+                raise ValueError('{} does not contain the element `{}`'.format(parameters, element))
+
+            if values['filename'] != pseudo.filename:
+                args = [parameters, 'filename', element, values['filename'], pseudo.filename]
+                raise ValueError('{} inconsistent `{}` for element `{}`: {} != {}'.format(*args))
+
+            if values['md5'] != pseudo.md5sum:
+                args = [parameters, 'md5', element, values['md5'], pseudo.md5sum]
+                raise ValueError('{} inconsistent `{}` for element `{}`: {} != {}'.format(*args))
+
+    @classmethod
+    def parse_pseudos_from_directory(cls, dirpath):
+        """Parse the UPF files in the given directory into a list of `UpfData` nodes.
+
+        :param dirpath: absolute path to a directory containing pseudo potentials in UPF format.
+        :return: list of `UpfData` nodes
+        :raises ValueError: if `dirpath` is not a directory or contains anything other than files with .UPF format
+        :raises ValueError: if `dirpath` contains multiple pseudo potentials for the same element
         """
         from aiida.common.exceptions import ParsingError
-
-        type_check(description, str, allow_none=True)
-
-        try:
-            cls.objects.get(label=label)
-        except exceptions.NotExistent:
-            family = SsspFamily(label=label)
-        else:
-            raise ValueError('the SsspFamily `{}` already exists'.format(label))
-
         pseudos = []
 
         if not os.path.isdir(dirpath):
@@ -71,6 +89,38 @@ class SsspFamily(Group):
 
         if len(pseudos) != len(set(pseudo.element for pseudo in pseudos)):
             raise ValueError('directory `{}` contains pseudo potentials with duplicate elements'.format(dirpath))
+
+        return pseudos
+
+    @classmethod
+    def create_from_folder(cls, dirpath, label, description=None, filepath_parameters=None):
+        """Create a new `SsspFamily` from the pseudo potentials contained in a directory.
+
+        .. note:: the directory pointed to by `dirpath` should only contain UPF files. If it contains any folders or any
+            of the files cannot be parsed as valid UPF, the method will raise a `ValueError`.
+
+        :param dirpath: absolute path to the folder containing the UPF files.
+        :param label: the label to give to the `SsspFamily`, should not already exist
+        :param description: optional description to give to the family.
+        :param filepath_parameters: a filelike object or filepath to a file containing metadata for `SsspParameters`.
+        :return: new stored instance of `SsspFamily`
+        :raises ValueError: if a `SsspFamily` already exists with the given name
+        """
+        type_check(description, str, allow_none=True)
+
+        try:
+            cls.objects.get(label=label)
+        except exceptions.NotExistent:
+            family = SsspFamily(label=label)
+        else:
+            raise ValueError('the SsspFamily `{}` already exists'.format(label))
+
+        pseudos = cls.parse_pseudos_from_directory(dirpath)
+
+        if filepath_parameters is not None:
+            parameters = SsspParameters.create_from_file(filepath_parameters, family.uuid)
+            cls.validate_parameters(pseudos, parameters)
+            parameters.store()
 
         if description is not None:
             family.description = description
@@ -152,3 +202,16 @@ class SsspFamily(Group):
                 self.pseudos[element] = pseudo
 
         return pseudo
+
+    def get_parameters_node(self):
+        """Return the associated `SsspParameters` node if it exists.
+
+        :return: the associated `SsspParameters` node containing information like recommended cutoffs
+        :raises: `aiida.common.exceptions.NotExistent` if the family does not have associated parameters
+        """
+        from aiida_sssp.data import SsspParameters
+
+        filters = {'attributes.{}'.format(SsspParameters.KEY_FAMILY_UUID): self.uuid}
+        builder = QueryBuilder().append(SsspParameters, filters=filters)
+
+        return builder.one()[0]

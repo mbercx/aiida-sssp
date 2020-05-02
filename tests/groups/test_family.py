@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=unused-argument
 """Tests for the `SsspFamily` class."""
+import copy
 import distutils.dir_util
 import os
 import shutil
@@ -100,6 +101,35 @@ def test_get_pseudo(clear_database, get_upf_data):
     assert upf.element == element
 
 
+def test_validate_parameters(clear_database, create_sssp_family, create_sssp_parameters):
+    """Test the `SsspFamily.validate_parameters` class method."""
+    family = create_sssp_family()
+    parameters = create_sssp_parameters()
+    metadata = parameters.get_metadata()
+
+    SsspFamily.validate_parameters(list(family.nodes), parameters)
+
+    # Incorrect filename
+    incorrect = copy.deepcopy(metadata['Ar'])
+    incorrect['filename'] = 'wrong_file_name'
+    parameters.set_attribute('Ar', incorrect)
+
+    with pytest.raises(ValueError) as exception:
+        SsspFamily.validate_parameters(list(family.nodes), parameters)
+
+    assert 'inconsistent `filename` for element `Ar`' in str(exception.value)
+
+    # Incorrect md5
+    incorrect = copy.deepcopy(metadata['Ar'])
+    incorrect['md5'] = '123abc'
+    parameters.set_attribute('Ar', incorrect)
+
+    with pytest.raises(ValueError) as exception:
+        SsspFamily.validate_parameters(list(family.nodes), parameters)
+
+    assert 'inconsistent `md5` for element `Ar`' in str(exception.value)
+
+
 def test_create_from_folder(clear_database, filepath_pseudos):
     """Test the `SsspFamily.create_from_folder` class method."""
     label = 'SSSP'
@@ -169,3 +199,26 @@ def test_create_from_folder_invalid(clear_database, filepath_pseudos):
         assert 'failed to parse' in str(exception.value)
         assert SsspFamily.objects.count() == 0
         assert orm.UpfData.objects.count() == 0
+
+
+def test_create_from_folder_with_parameters(clear_database, filepath_pseudos, sssp_parameter_filepath):
+    """Test the `SsspFamily.create_from_folder` class method when passing a file with pseudo metadata."""
+    with pytest.raises(TypeError):
+        SsspFamily.create_from_folder(filepath_pseudos, 'SSSP', filepath_parameters={})
+
+    # Test directly from filepath
+    family = SsspFamily.create_from_folder(filepath_pseudos, 'SSSP/1.0', filepath_parameters=sssp_parameter_filepath)
+    assert isinstance(family, SsspFamily)
+    assert family.is_stored
+
+    parameters = family.get_parameters_node()
+    assert parameters.family_uuid == family.uuid
+
+    # Test from filelike object
+    with open(sssp_parameter_filepath) as handle:
+        family = SsspFamily.create_from_folder(filepath_pseudos, 'SSSP/1.1', filepath_parameters=handle)
+        assert isinstance(family, SsspFamily)
+        assert family.is_stored
+
+        parameters = family.get_parameters_node()
+        assert parameters.family_uuid == family.uuid

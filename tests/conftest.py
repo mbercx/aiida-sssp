@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=unused-argument
 """Configuration and fixtures for unit test suite."""
+import json
 import os
+import tempfile
+
 import pytest
 
 pytest_plugins = ['aiida.manage.tests.pytest_fixtures']  # pylint: disable=invalid-name
@@ -100,6 +103,15 @@ def sssp_parameter_metadata():
             'md5': 'd8afbe89a47929da4eb817a75c908077'
         }
     }
+
+
+@pytest.fixture
+def sssp_parameter_filepath(sssp_parameter_metadata):
+    """Return a filepath that contains the parameter metadata."""
+    with tempfile.NamedTemporaryFile() as filepath:
+        with open(filepath.name, 'w') as handle:
+            json.dump(sssp_parameter_metadata, handle)
+        yield filepath.name
 
 
 @pytest.fixture
