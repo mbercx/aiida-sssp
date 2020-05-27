@@ -69,6 +69,18 @@ def filepath_pseudos(filepath_fixtures):
 
 
 @pytest.fixture
+def archive_pseudos(filepath_pseudos):
+    """Return the filepath of a tar.gz archive containing the standard UPF files."""
+    import tarfile
+
+    with tempfile.NamedTemporaryFile(suffix='.tar.gz') as handle:
+        with tarfile.open(handle.name, 'w:gz') as tar:
+            for filename in os.listdir(filepath_pseudos):
+                tar.add(os.path.join(filepath_pseudos, filename), arcname=filename)
+        yield handle.name
+
+
+@pytest.fixture
 def get_upf_data(filepath_pseudos):
     """Return `UpfData` for a given element."""
 

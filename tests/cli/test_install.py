@@ -26,3 +26,9 @@ def test_install(clear_db, run_cli_command):
 
     result = run_cli_command(cmd_install, raises=SystemExit)
     assert 'is already installed' in result.output
+
+
+def test_install_from_disk(clear_db, run_cli_command, archive_pseudos, sssp_parameter_filepath):
+    """Test the `aiida-sssp install` command using the `--archive` and `--metadata` options."""
+    options = ['--archive', archive_pseudos, '--metadata', sssp_parameter_filepath]
+    run_cli_command(cmd_install, options)
