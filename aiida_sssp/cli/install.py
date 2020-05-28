@@ -79,7 +79,7 @@ def cmd_install(version, functional, protocol, traceback):
                 description += '\nPseudo metadata md5: {}'.format(md5_file(filepath_metadata))
 
         with attempt('unpacking archive and parsing pseudos... ', include_traceback=traceback):
-            family = create_family_from_archive(label, filepath_archive, filepath_metadata)
+            family = create_family_from_archive(SsspFamily, label, filepath_archive, filepath_metadata)
 
         family.description = description
         echo.echo_success('installed `{}` containing {} pseudo potentials'.format(label, family.count()))

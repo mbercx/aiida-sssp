@@ -12,7 +12,7 @@ from . import options
 
 
 @cmd_root.command('show')
-@click.argument('sssp_family', type=types.GroupParamType(sub_classes=('aiida.groups:sssp.family',)))
+@click.argument('sssp_family', type=types.GroupParamType(sub_classes=('aiida.groups:sssp.family.sssp',)))
 @options.STRUCTURE()
 @options_core.RAW()
 @decorators.with_dbenv()

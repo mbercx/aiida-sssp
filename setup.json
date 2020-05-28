@@ -22,7 +22,8 @@
             "sssp.parameters = aiida_sssp.data.parameters:SsspParameters"
         ],
         "aiida.groups": [
-            "sssp.family = aiida_sssp.groups.family:SsspFamily"
+            "sssp.family.upf = aiida_sssp.groups.upf:UpfFamily",
+            "sssp.family.sssp = aiida_sssp.groups.sssp:SsspFamily"
         ]
     },
     "python_requires": ">=3.5",

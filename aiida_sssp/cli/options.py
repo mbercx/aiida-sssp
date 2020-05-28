@@ -26,7 +26,7 @@ def default_sssp_family(ctx, param, identifier):  # pylint: disable=unused-argum
 SSSP_FAMILY = OverridableOption(
     '-F',
     '--sssp-family',
-    type=GroupParamType(sub_classes=('aiida.groups:sssp.family',)),
+    type=GroupParamType(sub_classes=('aiida.groups:sssp.family.sssp',)),
     required=False,
     callback=default_sssp_family,
     help='Select an SSSP family.'

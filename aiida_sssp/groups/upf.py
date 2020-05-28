@@ -7,14 +7,14 @@ from aiida.common.lang import type_check
 from aiida.orm import Group, QueryBuilder
 from aiida.plugins import DataFactory
 
-__all__ = ('SsspFamily',)
+__all__ = ('UpfFamily',)
 
 UpfData = DataFactory('upf')
 SsspParameters = DataFactory('sssp.parameters')
 StructureData = DataFactory('structure')
 
 
-class SsspFamily(Group):
+class UpfFamily(Group):
     """Group to represent a pseudo potential family.
 
     Each instance can only contain `UpfData` nodes and can only contain one for each element.
@@ -97,26 +97,26 @@ class SsspFamily(Group):
 
     @classmethod
     def create_from_folder(cls, dirpath, label, description=None, filepath_parameters=None):
-        """Create a new `SsspFamily` from the pseudo potentials contained in a directory.
+        """Create a new `UpfFamily` from the pseudo potentials contained in a directory.
 
         .. note:: the directory pointed to by `dirpath` should only contain UPF files. If it contains any folders or any
             of the files cannot be parsed as valid UPF, the method will raise a `ValueError`.
 
         :param dirpath: absolute path to the folder containing the UPF files.
-        :param label: the label to give to the `SsspFamily`, should not already exist
+        :param label: the label to give to the `UpfFamily`, should not already exist
         :param description: optional description to give to the family.
         :param filepath_parameters: a filelike object or filepath to a file containing metadata for `SsspParameters`.
-        :return: new stored instance of `SsspFamily`
-        :raises ValueError: if a `SsspFamily` already exists with the given name
+        :return: new stored instance of `UpfFamily`
+        :raises ValueError: if a `UpfFamily` already exists with the given name
         """
         type_check(description, str, allow_none=True)
 
         try:
             cls.objects.get(label=label)
         except exceptions.NotExistent:
-            family = SsspFamily(label=label)
+            family = cls(label=label)
         else:
-            raise ValueError('the SsspFamily `{}` already exists'.format(label))
+            raise ValueError('the UpfFamily `{}` already exists'.format(label))
 
         pseudos = cls.parse_pseudos_from_directory(dirpath)
 
@@ -140,8 +140,8 @@ class SsspFamily(Group):
 
         .. note: Each family instance can only contain a single `UpfData` for each element.
 
-        :param nodes: a single `Node` or a list of `Nodes` of type `SsspFamily._node_types`
-        :raises TypeError: if nodes are not an instance or list of instance of `SsspFamily._node_types`
+        :param nodes: a single `Node` or a list of `Nodes` of type `UpfFamily._node_types`
+        :raises TypeError: if nodes are not an instance or list of instance of `UpfFamily._node_types`
         :raises ValueError: if any of the elements of the nodes already exist in this family
         """
         if not isinstance(nodes, (list, tuple)):
@@ -192,7 +192,7 @@ class SsspFamily(Group):
             pseudo = self.pseudos[element]
         except KeyError:
             builder = QueryBuilder().append(
-                SsspFamily, filters={'id': self.pk}, tag='group').append(
+                UpfFamily, filters={'id': self.pk}, tag='group').append(
                 self._node_types, filters={'attributes.element': element}, with_group='group')  # yapf:disable
 
             try:

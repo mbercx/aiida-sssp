@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=unused-argument,pointless-statement
-"""Tests for the `SsspFamily` class."""
+"""Tests for the `UpfFamily` class."""
 import copy
 import distutils.dir_util
 import os
@@ -13,42 +13,42 @@ from aiida import orm
 from aiida.common import exceptions
 
 from aiida_sssp.data import SsspParameters
-from aiida_sssp.groups import SsspFamily
+from aiida_sssp.groups import UpfFamily
 
 
 def test_type_string(clear_db):
     """Verify the `_type_string` class attribute is correctly set to the corresponding entry point name."""
-    assert SsspFamily._type_string == 'sssp.family'  # pylint: disable=protected-access
+    assert UpfFamily._type_string == 'sssp.family.upf'  # pylint: disable=protected-access
 
 
 def test_construct(clear_db):
-    """Test the construction of `SsspFamily` works."""
-    family = SsspFamily(label='SSSP').store()
-    assert isinstance(family, SsspFamily)
+    """Test the construction of `UpfFamily` works."""
+    family = UpfFamily(label='SSSP').store()
+    assert isinstance(family, UpfFamily)
 
     description = 'SSSP description'
-    family = SsspFamily(label='SSSP/v1.1', description=description).store()
-    assert isinstance(family, SsspFamily)
+    family = UpfFamily(label='SSSP/v1.1', description=description).store()
+    assert isinstance(family, UpfFamily)
     assert family.description == description
 
 
 def test_load(clear_db):
-    """Test that loading of a `SsspFamily` through `load_group` works."""
-    family = SsspFamily(label='SSSP').store()
-    assert isinstance(family, SsspFamily)
+    """Test that loading of a `UpfFamily` through `load_group` works."""
+    family = UpfFamily(label='SSSP').store()
+    assert isinstance(family, UpfFamily)
 
     loaded = orm.load_group(family.pk)
-    assert isinstance(family, SsspFamily)
+    assert isinstance(family, UpfFamily)
     assert loaded.uuid == family.uuid
     assert loaded.elements == family.elements
 
 
 def test_add_nodes(clear_db, get_upf_data):
-    """Test the `SsspFamily.add_nodes` method."""
+    """Test the `UpfFamily.add_nodes` method."""
     upf_he = get_upf_data(element='He').store()
     upf_ne = get_upf_data(element='Ne').store()
     upf_ar = get_upf_data(element='Ar').store()
-    family = SsspFamily(label='SSSP').store()
+    family = UpfFamily(label='SSSP').store()
 
     with pytest.raises(TypeError):
         family.add_nodes(orm.Data().store())
@@ -74,11 +74,11 @@ def test_add_nodes(clear_db, get_upf_data):
 
 
 def test_elements(clear_db, get_upf_data):
-    """Test the `SsspFamily.elements` property."""
+    """Test the `UpfFamily.elements` property."""
     upf_he = get_upf_data(element='He').store()
     upf_ne = get_upf_data(element='Ne').store()
     upf_ar = get_upf_data(element='Ar').store()
-    family = SsspFamily(label='SSSP').store()
+    family = UpfFamily(label='SSSP').store()
 
     family.add_nodes([upf_he, upf_ne, upf_ar])
     assert family.count() == 3
@@ -86,11 +86,11 @@ def test_elements(clear_db, get_upf_data):
 
 
 def test_get_pseudo(clear_db, get_upf_data):
-    """Test the `SsspFamily.get_pseudo` property."""
+    """Test the `UpfFamily.get_pseudo` property."""
     upf_he = get_upf_data(element='He').store()
     upf_ne = get_upf_data(element='Ne').store()
     upf_ar = get_upf_data(element='Ar').store()
-    family = SsspFamily(label='SSSP').store()
+    family = UpfFamily(label='SSSP').store()
     family.add_nodes([upf_he, upf_ne, upf_ar])
 
     with pytest.raises(ValueError) as exception:
@@ -105,12 +105,12 @@ def test_get_pseudo(clear_db, get_upf_data):
 
 
 def test_validate_parameters(clear_db, create_sssp_family, create_sssp_parameters):
-    """Test the `SsspFamily.validate_parameters` class method."""
+    """Test the `UpfFamily.validate_parameters` class method."""
     family = create_sssp_family()
     parameters = create_sssp_parameters()
     metadata = parameters.get_metadata()
 
-    SsspFamily.validate_parameters(list(family.nodes), parameters)
+    UpfFamily.validate_parameters(list(family.nodes), parameters)
 
     # Incorrect filename
     incorrect = copy.deepcopy(metadata['Ar'])
@@ -118,7 +118,7 @@ def test_validate_parameters(clear_db, create_sssp_family, create_sssp_parameter
     parameters.set_attribute('Ar', incorrect)
 
     with pytest.raises(ValueError) as exception:
-        SsspFamily.validate_parameters(list(family.nodes), parameters)
+        UpfFamily.validate_parameters(list(family.nodes), parameters)
 
     assert 'inconsistent `filename` for element `Ar`' in str(exception.value)
 
@@ -128,42 +128,42 @@ def test_validate_parameters(clear_db, create_sssp_family, create_sssp_parameter
     parameters.set_attribute('Ar', incorrect)
 
     with pytest.raises(ValueError) as exception:
-        SsspFamily.validate_parameters(list(family.nodes), parameters)
+        UpfFamily.validate_parameters(list(family.nodes), parameters)
 
     assert 'inconsistent `md5` for element `Ar`' in str(exception.value)
 
 
 def test_create_from_folder(clear_db, filepath_pseudos):
-    """Test the `SsspFamily.create_from_folder` class method."""
+    """Test the `UpfFamily.create_from_folder` class method."""
     label = 'SSSP'
-    family = SsspFamily.create_from_folder(filepath_pseudos, label)
+    family = UpfFamily.create_from_folder(filepath_pseudos, label)
 
-    assert isinstance(family, SsspFamily)
+    assert isinstance(family, UpfFamily)
     assert family.is_stored
     assert family.count() == len(os.listdir(filepath_pseudos))
     assert sorted(family.elements) == sorted([filename.rstrip('.upf') for filename in os.listdir(filepath_pseudos)])
 
     # Cannot create another family with the same label
     with pytest.raises(ValueError):
-        SsspFamily.create_from_folder(filepath_pseudos, label)
+        UpfFamily.create_from_folder(filepath_pseudos, label)
 
     with pytest.raises(TypeError) as exception:
-        SsspFamily.create_from_folder(filepath_pseudos, label, description=1)
+        UpfFamily.create_from_folder(filepath_pseudos, label, description=1)
     assert 'Got object of type' in str(exception.value)
 
 
 def test_create_from_folder_invalid(clear_db, filepath_pseudos):
-    """Test the `SsspFamily.create_from_folder` class method for invalid inputs."""
+    """Test the `UpfFamily.create_from_folder` class method for invalid inputs."""
     label = 'SSSP'
 
     with tempfile.TemporaryDirectory() as dirpath:
 
         # Non-existing directory should raise
         with pytest.raises(ValueError) as exception:
-            SsspFamily.create_from_folder(os.path.join(dirpath, 'non-existing'), label)
+            UpfFamily.create_from_folder(os.path.join(dirpath, 'non-existing'), label)
 
         assert 'is not a directory' in str(exception.value)
-        assert SsspFamily.objects.count() == 0
+        assert UpfFamily.objects.count() == 0
         assert orm.UpfData.objects.count() == 0
 
         distutils.dir_util.copy_tree(filepath_pseudos, dirpath)
@@ -174,10 +174,10 @@ def test_create_from_folder_invalid(clear_db, filepath_pseudos):
         shutil.copy(filepath, os.path.join(dirpath, filename[:-4] + '2.upf'))
 
         with pytest.raises(ValueError) as exception:
-            SsspFamily.create_from_folder(dirpath, label)
+            UpfFamily.create_from_folder(dirpath, label)
 
         assert 'contains pseudo potentials with duplicate elements' in str(exception.value)
-        assert SsspFamily.objects.count() == 0
+        assert UpfFamily.objects.count() == 0
         assert orm.UpfData.objects.count() == 0
 
         # Create an empty folder in the pseudo directory, which is not allowed
@@ -185,10 +185,10 @@ def test_create_from_folder_invalid(clear_db, filepath_pseudos):
         os.makedirs(dirpath_sub)
 
         with pytest.raises(ValueError) as exception:
-            SsspFamily.create_from_folder(dirpath, label)
+            UpfFamily.create_from_folder(dirpath, label)
 
         assert 'contains at least one entry that is not a file' in str(exception.value)
-        assert SsspFamily.objects.count() == 0
+        assert UpfFamily.objects.count() == 0
         assert orm.UpfData.objects.count() == 0
         os.rmdir(dirpath_sub)
 
@@ -197,21 +197,21 @@ def test_create_from_folder_invalid(clear_db, filepath_pseudos):
             handle.write('invalid pseudo format')
 
         with pytest.raises(ValueError) as exception:
-            SsspFamily.create_from_folder(dirpath, label)
+            UpfFamily.create_from_folder(dirpath, label)
 
         assert 'failed to parse' in str(exception.value)
-        assert SsspFamily.objects.count() == 0
+        assert UpfFamily.objects.count() == 0
         assert orm.UpfData.objects.count() == 0
 
 
 def test_create_from_folder_with_parameters(clear_db, filepath_pseudos, sssp_parameter_filepath):
-    """Test the `SsspFamily.create_from_folder` class method when passing a file with pseudo metadata."""
+    """Test the `UpfFamily.create_from_folder` class method when passing a file with pseudo metadata."""
     with pytest.raises(TypeError):
-        SsspFamily.create_from_folder(filepath_pseudos, 'SSSP', filepath_parameters={})
+        UpfFamily.create_from_folder(filepath_pseudos, 'SSSP', filepath_parameters={})
 
     # Test directly from filepath
-    family = SsspFamily.create_from_folder(filepath_pseudos, 'SSSP/1.0', filepath_parameters=sssp_parameter_filepath)
-    assert isinstance(family, SsspFamily)
+    family = UpfFamily.create_from_folder(filepath_pseudos, 'SSSP/1.0', filepath_parameters=sssp_parameter_filepath)
+    assert isinstance(family, UpfFamily)
     assert family.is_stored
 
     parameters = family.get_parameters_node()
@@ -219,8 +219,8 @@ def test_create_from_folder_with_parameters(clear_db, filepath_pseudos, sssp_par
 
     # Test from filelike object
     with open(sssp_parameter_filepath) as handle:
-        family = SsspFamily.create_from_folder(filepath_pseudos, 'SSSP/1.1', filepath_parameters=handle)
-        assert isinstance(family, SsspFamily)
+        family = UpfFamily.create_from_folder(filepath_pseudos, 'SSSP/1.1', filepath_parameters=handle)
+        assert isinstance(family, UpfFamily)
         assert family.is_stored
 
         parameters = family.get_parameters_node()
@@ -228,7 +228,7 @@ def test_create_from_folder_with_parameters(clear_db, filepath_pseudos, sssp_par
 
 
 def test_get_parameters_node(clear_db, create_sssp_family, create_sssp_parameters):
-    """Test the `SsspFamily.get_parameters_node` method."""
+    """Test the `UpfFamily.get_parameters_node` method."""
     family = create_sssp_family()
 
     with pytest.raises(exceptions.NotExistent):
@@ -241,7 +241,7 @@ def test_get_parameters_node(clear_db, create_sssp_family, create_sssp_parameter
 
 
 def test_parameters(clear_db, create_sssp_family, create_sssp_parameters):
-    """Test the `SsspFamily.parameters` property."""
+    """Test the `UpfFamily.parameters` property."""
     family = create_sssp_family()
 
     with pytest.raises(exceptions.NotExistent):
@@ -254,7 +254,7 @@ def test_parameters(clear_db, create_sssp_family, create_sssp_parameters):
 
 
 def test_get_parameter(clear_db, create_sssp_family, create_sssp_parameters, sssp_parameter_metadata):
-    """Test the `SsspFamily.get_parameter` method."""
+    """Test the `UpfFamily.get_parameter` method."""
     family = create_sssp_family()
 
     with pytest.raises(exceptions.NotExistent):
@@ -277,7 +277,7 @@ def test_get_parameter(clear_db, create_sssp_family, create_sssp_parameters, sss
 
 
 def test_get_cutoffs(clear_db, create_sssp_family, create_sssp_parameters, create_structure):
-    """Test the `SsspFamily.get_cutoffs` method."""
+    """Test the `UpfFamily.get_cutoffs` method."""
     family = create_sssp_family()
     parameters = create_sssp_parameters(uuid=family.uuid).store().attributes
     structure = create_structure(site_kind_names=['Ar', 'He', 'Ne'])
@@ -311,7 +311,7 @@ def test_get_cutoffs(clear_db, create_sssp_family, create_sssp_parameters, creat
 
 
 def test_get_pseudos(clear_db, create_sssp_family, create_sssp_parameters, create_structure):
-    """Test the `SsspFamily.get_pseudos` method."""
+    """Test the `UpfFamily.get_pseudos` method."""
     family = create_sssp_family()
 
     with pytest.raises(TypeError):
